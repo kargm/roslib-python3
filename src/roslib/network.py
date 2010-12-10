@@ -326,15 +326,16 @@ def decode_ros_handshake_header(header_str):
         
         #we need to create a string here to be able to work with find(...) in PY3
         linestring = str(line)
+        #idx = line.find('=')
         idx = linestring.find('=')
         if idx < 0:
             raise ROSHandshakeException("Invalid line in handshake header: [%s]"%line)
             
-        #this is for PY 3. had to change indexes to get the string without "b'" at the front and "'" at the end
+        #this is for PY 3. had to change indexes to get the string without "b'" at the front and "'" at the end for BufferIO
+        #NOTE: not sure if this works for 2.6 too -> TEST
         key = linestring[2:idx]
         value = linestring[idx+1:-1]
         
-        #this is for PY 2.6
         #key = line[:idx]
         #value = line[idx+1:]
         d[key.strip()] = value
@@ -376,7 +377,6 @@ def read_ros_handshake_header(sock, b, buff_size):
                 b.seek(0)
                 b.write(leftovers)
                 header_recvd = True
-                    
     # process the header
     return decode_ros_handshake_header(bval)
 
@@ -394,12 +394,31 @@ def encode_ros_handshake_header(header):
     @return: header encoded as byte string
     @rtype: str
     """    
+    print("****************** encoding handshake header")    
+    print("****************** header is %s"%header)
     fields = ["%s=%s"%(k,v) for k,v in header.items()]
+    #print("****************** fields is %s"%fields)
     s = ''.join(["%s%s"%(struct.pack('<I', len(f)), f) for f in fields])
-    print("****************** encoding handshake header")
+    #s = ''.join(["%s%s"%(struct.pack('<I', len(f))[2:-1], f) for f in fields])
+    #s = ''.join(["%s%s"%(str(struct.pack('<I', len(f)))[2:-1], f) for f in fields])
+	
+    for f in fields:
+        print("***************************** f is %s"%f)
+        print("***************************** join is %s"%s)
+        
+    #struct.pack introduces the b'<...>' which we do not want	
+    print("****************** struct.pack is %s"%struct.pack('<I', len(s)))
+    print("****************** struct.pack[2:-1] is %s"%struct.pack('<I', len(s))[2:-1])
+    print("****************** struct.pack.str[2:-1] is %s"%str(struct.pack('<I', len(s)))[2:-1])
+    
     print("****************** s is %s"%s)
-    return struct.pack('<I', len(s)) + s
-                                        
+    print("****************** s.encode is %s"%s.encode("utf-8"))
+    
+    with open('/usr/wiss/kargm/Desktop/test.log', mode='w', encoding='utf-8') as a_file:
+        a_file.write(s)
+        
+    return struct.pack('<I', len(s)) + s.encode("utf-8")
+                                            
 def write_ros_handshake_header(sock, header):
     """
     Write ROS handshake header header to socket sock
