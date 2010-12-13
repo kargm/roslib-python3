@@ -293,23 +293,16 @@ def decode_ros_handshake_header(header_str):
     header is a list of string key=value pairs, each prefixed by a
     4-byte length field. It is preceeded by a 4-byte length field for
     the entire header.
-    
+   
     @param header_str: encoded header string. May contain extra data at the end.
     @type  header_str: str
     @return: key value pairs encoded in \a header_str
-    @rtype: {str: str} 
+    @rtype: {str: str}
     """
-    print("+++++++++++++++ Entering decode_ros_handshake header...")
     
     (size, ) = struct.unpack('<I', header_str[0:4])
-    #print("+++++++++++++++ size is %s..."%size)
-    
     size += 4 # add in 4 to include size of size field
-    #print("+++++++++++++++ size + 4 is %s..."%size)
-    
     header_len = len(header_str)
-    #print("header_len is %s"%header_len)
-    
     if size > header_len:
         raise ROSHandshakeException("Incomplete header. Expected %s bytes but only have %s"%((size+4), header_len))
 
@@ -324,20 +317,22 @@ def decode_ros_handshake_header(header_str):
             raise ROSHandshakeException("Invalid line length in handshake header: %s"%size)
         line = header_str[start-field_size:start]
         
-        #we need to create a string here to be able to work with find(...) in PY3
-        linestring = str(line)
-        #idx = line.find('=')
-        idx = linestring.find('=')
+        #NOTE: since Python 3 there is no find-function in string anymore i make a string out of line
+        #and use it to build the dictionary which seems to work
+        print("Type of line is %s"%type(line))
+        linestring = line.decode("utf-8")
+        #print(dir(line))
+        idx = linestring.find("=")
         if idx < 0:
             raise ROSHandshakeException("Invalid line in handshake header: [%s]"%line)
-            
-        #this is for PY 3. had to change indexes to get the string without "b'" at the front and "'" at the end for BufferIO
-        #NOTE: not sure if this works for 2.6 too -> TEST
-        key = linestring[2:idx]
-        value = linestring[idx+1:-1]
         
-        #key = line[:idx]
-        #value = line[idx+1:]
+        # if i leave the original setting, the dictionary is build with key=b'key and value=value' which we dont want (or do we???)
+        # so i changed the indexation.... maybe theres a better solution for that...  
+        # original settings:
+        key = linestring[:idx]
+        value = linestring[idx+1:]
+        #key = linestring[2:idx]
+        #value = linestring[idx+1:-1]
         d[key.strip()] = value
         print("+++++++++++++++ Added key-value-pair: %s = %s"%(key, value))
     return d
@@ -361,16 +356,21 @@ def read_ros_handshake_header(sock, b, buff_size):
         d = sock.recv(buff_size)
         if not d:
             raise ROSHandshakeException("connection from sender terminated before handshake header received. %s bytes were received. Please check sender for additional details."%b.tell())
+        print ("--------------> %s ======= %s ======= %s" %  (type (d), dir(d), d))
         b.write(d)
+        print ("--------------> %s ======= %s ======= %s" %  (type (b), dir(b), b.getvalue()))        
         btell = b.tell()
+        print("--------------> length %i"% b.tell())
         if btell > 4:
             # most likely we will get the full header in the first recv, so
             # not worth tiny optimizations possible here
             bval = b.getvalue()
+            print("***************************** bval is %s"%bval)
             (size,) = struct.unpack('<I', bval[0:4])
+            print("***************************** bval[0:4] is %s"%bval[0:4])
             if btell - 4 >= size:
                 header_str = bval
-
+                
                 # memmove the remnants of the buffer back to the start
                 leftovers = bval[size+4:]
                 b.truncate(len(leftovers))
@@ -378,6 +378,7 @@ def read_ros_handshake_header(sock, b, buff_size):
                 b.write(leftovers)
                 header_recvd = True
     # process the header
+
     return decode_ros_handshake_header(bval)
 
 def encode_ros_handshake_header(header):
@@ -393,31 +394,17 @@ def encode_ros_handshake_header(header):
     @type  header: dict
     @return: header encoded as byte string
     @rtype: str
-    """    
-    print("****************** encoding handshake header")    
-    print("****************** header is %s"%header)
+    """   
     fields = ["%s=%s"%(k,v) for k,v in header.items()]
-    #print("****************** fields is %s"%fields)
-    s = ''.join(["%s%s"%(struct.pack('<I', len(f)), f) for f in fields])
-    #s = ''.join(["%s%s"%(struct.pack('<I', len(f))[2:-1], f) for f in fields])
-    #s = ''.join(["%s%s"%(str(struct.pack('<I', len(f)))[2:-1], f) for f in fields])
-	
-    for f in fields:
-        print("***************************** f is %s"%f)
-        print("***************************** join is %s"%s)
-        
-    #struct.pack introduces the b'<...>' which we do not want	
-    print("****************** struct.pack is %s"%struct.pack('<I', len(s)))
-    print("****************** struct.pack[2:-1] is %s"%struct.pack('<I', len(s))[2:-1])
-    print("****************** struct.pack.str[2:-1] is %s"%str(struct.pack('<I', len(s)))[2:-1])
     
-    print("****************** s is %s"%s)
-    print("****************** s.encode is %s"%s.encode("utf-8"))
+    # in the usual configuration, the error 'TypeError: can't concat bytes to str' appears:
+    # s = ''.join(["%s%s"%(struct.pack('<I', len(f)), f) for f in fields])
+    #the part struct.pack is bytes, f are strings ?
     
-    with open('/usr/wiss/kargm/Desktop/test.log', mode='w', encoding='utf-8') as a_file:
-        a_file.write(s)
-        
-    return struct.pack('<I', len(s)) + s.encode("utf-8")
+    s = ''.join(["%s%s"%(struct.pack('<I', len(f)).decode(), f) for f in fields])
+    #print ("--> %s <--" % s)
+    #print ("-------> %s <-------" % str(struct.pack('<I', len(s)) + s.encode()))
+    return struct.pack('<I', len(s)) + s.encode()
                                             
 def write_ros_handshake_header(sock, header):
     """
@@ -432,4 +419,3 @@ def write_ros_handshake_header(sock, header):
     s = encode_ros_handshake_header(header)
     sock.sendall(s)
     return len(s) #STATS
-    
