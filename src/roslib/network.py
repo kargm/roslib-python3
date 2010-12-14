@@ -51,8 +51,10 @@ import platform
 
 try:
     from cStringIO import StringIO #Python 2.x
+    python3 = 0
 except ImportError:
-    from io import BytesIO #Python 3.ximport select
+    from io import BytesIO #Python 3.x
+    python3 = 1
 try:
     import urllib.parse as urlparse
 except ImportError:
@@ -319,7 +321,7 @@ def decode_ros_handshake_header(header_str):
         
         #NOTE: since Python 3 there is no find-function in string anymore i make a string out of line
         #and use it to build the dictionary which seems to work
-        print("Type of line is %s"%type(line))
+        #print("Type of line is %s"%type(line))
         linestring = line.decode("utf-8")
         #print(dir(line))
         idx = linestring.find("=")
@@ -356,18 +358,19 @@ def read_ros_handshake_header(sock, b, buff_size):
         d = sock.recv(buff_size)
         if not d:
             raise ROSHandshakeException("connection from sender terminated before handshake header received. %s bytes were received. Please check sender for additional details."%b.tell())
-        print ("--------------> %s ======= %s ======= %s" %  (type (d), dir(d), d))
+        #print ("--------------> %s ======= %s ======= %s" %  (type (d), dir(d), d))
         b.write(d)
-        print ("--------------> %s ======= %s ======= %s" %  (type (b), dir(b), b.getvalue()))        
+        #print ("--------------> %s ======= %s ======= %s" %  (type (b), dir(b), b.getvalue()))        
         btell = b.tell()
-        print("--------------> length %i"% b.tell())
-        if btell > 4:
+        #print("--------------> length %i"% b.tell())
             # most likely we will get the full header in the first recv, so
+        if btell > 4:
             # not worth tiny optimizations possible here
             bval = b.getvalue()
             print("***************************** bval is %s"%bval)
-            (size,) = struct.unpack('<I', bval[0:4])
-            print("***************************** bval[0:4] is %s"%bval[0:4])
+            (
+            size,) = struct.unpack('<I', bval[0:4])
+            #print("***************************** bval[0:4] is %s"%bval[0:4])
             if btell - 4 >= size:
                 header_str = bval
                 
