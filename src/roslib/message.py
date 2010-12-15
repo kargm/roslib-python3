@@ -227,6 +227,7 @@ def check_type(field_name, field_type, field_val):
     # lazy-import as roslib.genpy has lots of extra imports. Would
     # prefer to do lazy-init in a different manner
     import roslib.genpy
+    #if roslib.genpy.is_simple(field_type):
     if roslib.genpy.is_simple(field_type):
         # check sign and width
         if field_type in ['byte', 'int8', 'int16', 'int32', 'int64']:
@@ -245,6 +246,10 @@ def check_type(field_name, field_type, field_val):
             if field_val not in [True, False, 0, 1]:
                 raise SerializationError('field %s is not a bool'%(field_name))
     elif field_type == 'string':
+        #print("------------------> field type is %s"%field_type)
+        #print("------------------> field.issimple type is %s"%roslib.genpy.is_simple(field_type.encode("utf-8")))
+        #print("------------------> field_name is: %s"%field_name)
+        
         if type(field_val) == str:
             raise SerializationError('field %s is a unicode string instead of an ascii string'%field_name)
         elif type(field_val) != str:
@@ -339,6 +344,9 @@ class Message(object):
         @raise roslib.messages.SerializationError: if typecheck fails
         """
         for n, t in zip(self.__slots__, self._get_types()):
+            #print("(message.py) ===============> n is %s"%n)
+            #print("(message.py) ===============> self is %s"%self)
+            #print("(message.py) ===============> check type: n: %s t: %s getattr( %s )" %(n, t, getattr(self, n)))
             check_type(n, t, getattr(self, n))
         if exc: # if exc is set and check_type could not diagnose, raise wrapped error
             raise SerializationError(str(exc))

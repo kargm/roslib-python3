@@ -1160,13 +1160,13 @@ def generate_dynamic(core_type, msg_cat):
     # types. The types have to be registered globally in order for
     # message generation of dependents to work correctly.
     roslib.msgs.reinit()
-    for t, spec in specs.items():
+    for t, spec in list(specs.items()):
         roslib.msgs.register(t, spec)
 
     # process actual MsgSpecs: we accumulate them into a single file,
     # rewriting the generated text as needed
     buff = StringIO()
-    for t, spec in specs.items():
+    for t, spec in list(specs.items()):
         pkg, s_type = roslib.names.package_resource_name(t)
         # dynamically generate python message code
         for l in msg_generator(pkg, s_type, spec):
@@ -1193,7 +1193,7 @@ def generate_dynamic(core_type, msg_cat):
 
     # finally, retrieve the message classes from the dynamic module
     messages = {}
-    for t in specs.keys():
+    for t in list(specs.keys()):
         pkg, s_type = roslib.names.package_resource_name(t)
         try:
             messages[t] = getattr(mod, _gen_dyn_name(pkg, s_type))

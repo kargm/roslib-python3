@@ -42,7 +42,7 @@ import re
 
 try:
     import cStringIO as io # Python 2.x
-except ImportException:
+except ImportError:
     import io # Python 3.x
 
 import roslib.exceptions

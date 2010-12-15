@@ -114,7 +114,7 @@ string frame_id
     """
     try:
       _x = self
-      buff.write(_struct_3I.pack(_x.header.seq, _x.header.stamp.secs, _x.header.stamp.nsecs))
+      buff.write(_struct_3I.pack(str(_x.header.seq), str(_x.header.stamp.secs), str(_x.header.stamp.nsecs)))
       _x = self.header.frame_id
       length = len(_x)
       buff.write(struct.pack('<I%ss'%length, length, _x))
