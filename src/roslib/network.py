@@ -301,7 +301,6 @@ def decode_ros_handshake_header(header_str):
     @return: key value pairs encoded in \a header_str
     @rtype: {str: str}
     """
-    
     (size, ) = struct.unpack('<I', header_str[0:4])
     size += 4 # add in 4 to include size of size field
     header_len = len(header_str)
@@ -358,12 +357,9 @@ def read_ros_handshake_header(sock, b, buff_size):
         if btell > 4:
             # not worth tiny optimizations possible here
             bval = b.getvalue()
-            #print("***************************** bval is %s"%bval)
             (size,) = struct.unpack('<I', bval[0:4])
-            #print("***************************** bval[0:4] is %s"%bval[0:4])
             if btell - 4 >= size:
                 header_str = bval
-                
                 # memmove the remnants of the buffer back to the start
                 leftovers = bval[size+4:]
                 b.truncate(len(leftovers))
@@ -393,12 +389,10 @@ def encode_ros_handshake_header(header):
     if python3 == 0:
 		#python 2
         s = ''.join(["%s%s"%(struct.pack('<I', len(f)), f) for f in fields])
-        #print("========> s is is %s"%s)
         return struct.pack('<I', len(s)) + s
     else:
 		#python 3     
         s = ''.join(["%s%s"%(struct.pack('<I', len(f)).decode(), f) for f in fields])
-        #print("========> s is is %s"%s)
         return struct.pack('<I', len(s)) + s.encode()
                                             
 def write_ros_handshake_header(sock, header):

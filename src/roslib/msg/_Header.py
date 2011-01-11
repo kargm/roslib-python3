@@ -74,10 +74,8 @@ string frame_id
       _x = self.frame_id
       length = len(_x)
       buff.write(struct.pack('<I%ss'%length, length, _x))
-    except struct.error as se:
-        self._check_types(se)
-    except TypeError as te: 
-        self._check_types(te)
+    except struct.error as se: self._check_types(se)
+    except TypeError as te: self._check_types(te)
 
   def deserialize(self, str):
     """
@@ -119,10 +117,8 @@ string frame_id
       _x = self.frame_id
       length = len(_x)
       buff.write(struct.pack('<I%ss'%length, length, _x))
-    except struct.error as se:
-        self._check_types(se)
-    except TypeError as te:
-        self._check_types(te)
+    except struct.error as se: self._check_types(se)
+    except TypeError as te: self._check_types(te)
 
   def deserialize_numpy(self, str, numpy):
     """
